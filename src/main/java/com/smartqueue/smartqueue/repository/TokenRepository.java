@@ -13,5 +13,6 @@ public interface TokenRepository extends JpaRepository<Token, Long> {
     );
     List<Token> findByQueueQueueId(Long queueId);
     List<Token> findByStatus(String status);
+    List<Token> findByUserUserIdOrderByTokenIdDesc(Integer userId);
 
 }

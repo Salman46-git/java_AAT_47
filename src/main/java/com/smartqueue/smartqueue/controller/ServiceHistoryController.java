@@ -10,24 +10,26 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.smartqueue.smartqueue.entity.User;
-import com.smartqueue.smartqueue.service.UserService;
+import com.smartqueue.smartqueue.entity.ServiceHistory;
+import com.smartqueue.smartqueue.service.ServiceHistoryService;
 
 @RestController
-@RequestMapping("/users")
+@RequestMapping("/service-history")
 @CrossOrigin(origins = "*")
-public class UserController {
+public class ServiceHistoryController {
 
     @Autowired
-    private UserService userService;
-
-    @GetMapping
-    public List<User> getUsers() {
-        return userService.getAllUsers();
-    }
+    private ServiceHistoryService serviceHistoryService;
 
     @PostMapping
-    public User addUser(@RequestBody User user) {
-        return userService.saveUser(user);
+    public ServiceHistory create(
+            @RequestBody ServiceHistory serviceHistory){
+
+        return serviceHistoryService.save(serviceHistory);
+    }
+
+    @GetMapping
+    public List<ServiceHistory> getAll(){
+        return serviceHistoryService.getAll();
     }
 }

@@ -75,4 +75,7 @@ public class TokenService {
     public List<Token> getTokensByStatus(String status) {
         return tokenRepository.findByStatus(status);
     }
-}
+    public List<Token> getTokensByUser(Integer userId) {
+        return tokenRepository.findByUserUserIdOrderByTokenIdDesc(userId);
+    }
+}

@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartQueue Lobby - Live Queue Board</title>
+    <!-- Google Fonts: Outfit & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <!-- Lucide Icons CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/lucide/dist/umd/lucide.min.js"></script>
+    <style>
+        :root {
+            --bg-base: #030712;
+            --bg-card: rgba(17, 24, 39, 0.7);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --text-primary: #f9fafb;
+            --text-muted: #9ca3af;
+            --primary: #3b82f6;
+            --primary-glow: rgba(59, 130, 246, 0.35);
+            --accent-green: #10b981;
+            --accent-green-glow: rgba(16, 185, 129, 0.35);
+            --accent-yellow: #f59e0b;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: radial-gradient(circle at top, #0f172a, #030712);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        /* Autoplay bypass overlay */
+        #audio-activation-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(3, 7, 18, 0.95);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+
+        #audio-activation-overlay.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .overlay-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            padding: 40px;
+            border-radius: 20px;
+            max-width: 500px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .overlay-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 50px;
+            background: var(--primary-glow);
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 25px;
+            animation: pulse-primary 2s infinite;
+        }
+
+        .overlay-card h2 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.8rem;
+            margin-bottom: 12px;
+        }
+
+        .overlay-card p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            line-height: 1.5;
+            margin-bottom: 30px;
+        }
+
+        .overlay-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 14px 30px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.2s ease;
+        }
+
+        .overlay-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px var(--primary-glow);
+        }
+
+        /* Top Bar */
+        .top-bar {
+            height: 80px;
+            background: rgba(3, 7, 18, 0.4);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 40px;
+            backdrop-filter: blur(10px);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .brand-name {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.6rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #ffffff, #9ca3af);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .tv-badge {
+            background: rgba(139, 92, 246, 0.15);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            color: #a78bfa;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-left: 10px;
+        }
+
+        .top-right {
+            display: flex;
+            align-items: center;
+            gap: 30px;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            background: rgba(255, 255, 255, 0.04);
+            padding: 6px 14px;
+            border-radius: 30px;
+            border: 1px solid var(--border-color);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent-green);
+            animation: pulse-green 1.5s infinite;
+        }
+
+        .status-indicator.offline .status-dot {
+            background: var(--accent-yellow);
+            animation: none;
+        }
+
+        .digital-clock {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 1.8rem;
+            color: var(--text-primary);
+            letter-spacing: 1px;
+        }
+
+        /* Layout Grid */
+        .board-container {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 2.2fr 1fr;
+            gap: 30px;
+            padding: 30px 40px;
+            max-height: calc(100vh - 80px);
+            overflow: hidden;
+        }
+
+        .panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            backdrop-filter: blur(16px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .panel-header {
+            padding: 24px 30px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .panel-header h2 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.4rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* Now Serving Area */
+        .serving-grid {
+            flex: 1;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 24px;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        .serving-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            animation: card-appear 0.4s ease-out;
+        }
+
+        .serving-card.new-call {
+            border-color: var(--primary);
+            box-shadow: 0 0 30px var(--primary-glow);
+            animation: flash-border 1.5s infinite;
+        }
+
+        .serving-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+        }
+
+        .serving-queue-name {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 15px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .serving-number-box {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 15px 0;
+            margin: 10px 0;
+            background: rgba(255, 255, 255, 0.015);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+        }
+
+        .serving-token-number {
+            font-family: 'Outfit', sans-serif;
+            font-size: 5.5rem;
+            font-weight: 900;
+            color: #38bdf8;
+            letter-spacing: -2px;
+            text-shadow: 0 0 20px rgba(56, 189, 248, 0.5);
+            line-height: 1;
+        }
+
+        .new-call .serving-token-number {
+            animation: text-pulse 1s infinite alternate;
+        }
+
+        .serving-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .serving-counter {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .serving-agent {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Empty State */
+        .empty-serving-state {
+            grid-column: 1 / -1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: var(--text-muted);
+            padding: 40px;
+        }
+
+        .empty-serving-icon {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.03);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+        }
+
+        .empty-serving-state h3 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.4rem;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        /* Waiting List Area */
+        .waiting-list-container {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .waiting-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 20px;
+            background: rgba(255, 255, 255, 0.015);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            transition: all 0.2s ease;
+        }
+
+        .waiting-row:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .waiting-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .waiting-badge {
+            font-family: 'Outfit', sans-serif;
+            background: var(--primary-glow);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            color: #93c5fd;
+            font-size: 1.15rem;
+            font-weight: 700;
+            padding: 4px 12px;
+            border-radius: 8px;
+            min-width: 55px;
+            text-align: center;
+        }
+
+        .waiting-queue-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .waiting-queue-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+        }
+
+        .waiting-customer-name {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .waiting-status {
+            font-size: 0.75rem;
+            background: rgba(245, 158, 11, 0.15);
+            color: #fcd34d;
+            border: 1px solid rgba(245, 158, 11, 0.25);
+            padding: 3px 8px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .empty-waiting-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: var(--text-muted);
+            padding: 40px 20px;
+            flex: 1;
+        }
+
+        /* Animations */
+        @keyframes pulse-primary {
+            0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(59, 130, 246, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+        }
+
+        @keyframes pulse-green {
+            0% { transform: scale(0.9); opacity: 0.6; }
+            50% { transform: scale(1.15); opacity: 1; }
+            100% { transform: scale(0.9); opacity: 0.6; }
+        }
+
+        @keyframes text-pulse {
+            from { opacity: 0.8; text-shadow: 0 0 10px rgba(56, 189, 248, 0.4); }
+            to { opacity: 1; text-shadow: 0 0 30px rgba(56, 189, 248, 0.9); }
+        }
+
+        @keyframes flash-border {
+            0% { border-color: rgba(59, 130, 246, 0.2); }
+            50% { border-color: rgba(59, 130, 246, 0.9); }
+            100% { border-color: rgba(59, 130, 246, 0.2); }
+        }
+
+        @keyframes card-appear {
+            from { transform: scale(0.95); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <!-- 1. Autoplay Safety Overlay -->
+    <div id="audio-activation-overlay">
+        <div class="overlay-card animate-pop">
+            <div class="overlay-icon">
+                <i data-lucide="volume-2" style="width: 40px; height: 40px;"></i>
+            </div>
+            <h2>Lobby TV Announcement Board</h2>
+            <p>To enable automatically spoken announcements, voice synthesized alerts, and sound chime notifications, the browser requires an explicit user action.</p>
+            <button class="overlay-btn" onclick="activateAudio()">
+                <i data-lucide="play"></i>
+                <span>Start Queue Monitor</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- 2. Header Top Bar -->
+    <header class="top-bar">
+        <div class="brand">
+            <div class="logo-icon">
+                <i data-lucide="layers"></i>
+            </div>
+            <span class="brand-name">SmartQueue</span>
+            <span class="tv-badge">TV Display</span>
+        </div>
+        
+        <div class="top-right">
+            <div class="status-indicator" id="syncStatus">
+                <span class="status-dot"></span>
+                <span id="syncStatusText">Connected to Server</span>
+            </div>
+            <div class="digital-clock" id="clock">00:00:00</div>
+        </div>
+    </header>
+
+    <!-- 3. Dashboard Container -->
+    <main class="board-container">
+        <!-- NOW SERVING PANEL -->
+        <section class="panel">
+            <div class="panel-header">
+                <h2>
+                    <i data-lucide="volume-2" class="text-primary"></i>
+                    <span>NOW SERVING</span>
+                </h2>
+                <span style="font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; display: flex; align-items: center; gap: 5px;">
+                    <span style="width: 6px; height: 6px; border-radius: 50%; background: var(--accent-green); display: inline-block;"></span> Live Counters
+                </span>
+            </div>
+            <div class="serving-grid" id="servingGrid">
+                <!-- Dynamically loaded serving cards -->
+                <div class="empty-serving-state">
+                    <div class="empty-serving-icon"><i data-lucide="bell-off"></i></div>
+                    <h3>No Active Counters</h3>
+                    <p>Counter desks are currently closed. Take a ticket at the kiosk and wait for counter startup.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- UPCOMING TICKETS PANEL -->
+        <section class="panel">
+            <div class="panel-header">
+                <h2>
+                    <i data-lucide="list-ordered" style="color: var(--accent-yellow);"></i>
+                    <span>WAITING LIST</span>
+                </h2>
+                <span id="waitingCountBadge" style="background: rgba(255,255,255,0.06); font-size: 0.85rem; font-weight: 600; padding: 4px 10px; border-radius: 20px;">0 Waiting</span>
+            </div>
+            <div class="waiting-list-container" id="waitingList">
+                <!-- Dynamically loaded waiting queue -->
+                <div class="empty-waiting-state">
+                    <i data-lucide="smile" style="font-size: 2.5rem; color: var(--text-muted); margin-bottom: 15px;"></i>
+                    <p>No waiting tickets. Everything is clear!</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Hidden audio element for chime -->
+    <audio id="lobbyChime" src="https://assets.mixkit.co/active_storage/sfx/2568/2568-84.wav" preload="auto"></audio>
+
+    <!-- Business Logic -->
+    <script>
+        const API_BASE = window.location.origin === 'http://localhost:8080' ? '' : 'http://localhost:8080';
+        let useSimulationMode = false;
+        let announcedTokens = new Set();
+        let isAudioActivated = false;
+        let lastTokensState = {}; // tokenId -> status
+
+        // Setup clock
+        function updateClock() {
+            const now = new Date();
+            const hrs = String(now.getHours()).padStart(2, '0');
+            const mins = String(now.getMinutes()).padStart(2, '0');
+            const secs = String(now.getSeconds()).padStart(2, '0');
+            const clockEl = document.getElementById("clock");
+            if (clockEl) clockEl.innerText = `${hrs}:${mins}:${secs}`;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // Autoplay activation
+        function activateAudio() {
+            isAudioActivated = true;
+            document.getElementById("audio-activation-overlay").classList.add("hidden");
+            
+            // Try playing quiet/blank audio to warm up audio system
+            const chime = document.getElementById("lobbyChime");
+            if (chime) {
+                chime.play().then(() => {
+                    chime.pause();
+                    chime.currentTime = 0;
+                }).catch(e => console.log("Audio Warmup failed:", e));
+            }
+
+            // Warm up TTS
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance("");
+                window.speechSynthesis.speak(utterance);
+            }
+
+            // Start polling loop
+            startPolling();
+        }
+
+        // Initialize icons
+        lucide.createIcons();
+
+        // Database getters (Offline simulation fallbacks)
+        function getSimData(key, defaultVal) {
+            const val = localStorage.getItem(key);
+            return val ? JSON.parse(val) : defaultVal;
+        }
+
+        // Announcement triggers
+        function playChime() {
+            if (!isAudioActivated) return;
+            const chime = document.getElementById("lobbyChime");
+            if (chime) {
+                chime.currentTime = 0;
+                chime.play().catch(e => console.warn("Chime block:", e));
+            }
+        }
+
+        function speakCall(tokenNumber, queueName) {
+            if (!isAudioActivated || !('speechSynthesis' in window)) return;
+            
+            // Cancel current speech to prevent queueing lag
+            window.speechSynthesis.cancel();
+            
+            const text = `Token number ${tokenNumber}. Please proceed to ${queueName}.`;
+            const utterance = new SpeechSynthesisUtterance(text);
+            
+            // Choose a premium voice if available
+            const voices = window.speechSynthesis.getVoices();
+            const englishVoice = voices.find(v => v.lang.startsWith('en') && v.name.includes('Google')) || 
+                                 voices.find(v => v.lang.startsWith('en'));
+            if (englishVoice) utterance.voice = englishVoice;
+            
+            utterance.rate = 0.92;
+            utterance.pitch = 1.05;
+            
+            window.speechSynthesis.speak(utterance);
+        }
+
+        // Format Helper
+        function formatTokenNumber(num) {
+            return String(num).padStart(2, '0');
+        }
+
+        // Data polling and display rendering
+        async function fetchQueueData() {
+            let tokens = [];
+            let queues = [];
+            
+            try {
+                // Try live REST API
+                const tRes = await fetch(`${API_BASE}/tokens`);
+                const qRes = await fetch(`${API_BASE}/queues`);
+                
+                if (tRes.ok && qRes.ok) {
+                    tokens = await tRes.json();
+                    queues = await qRes.json();
+                    
+                    document.getElementById("syncStatus").className = "status-indicator";
+                    document.getElementById("syncStatusText").innerText = "Connected to Server";
+                    useSimulationMode = false;
+                } else {
+                    throw new Error("HTTP error");
+                }
+            } catch (err) {
+                // Fallback to simulation mode databases
+                useSimulationMode = true;
+                document.getElementById("syncStatus").className = "status-indicator offline";
+                document.getElementById("syncStatusText").innerText = "Offline (Simulation)";
+                
+                tokens = getSimData("SQ_SIM_TOKENS", []);
+                queues = getSimData("SQ_SIM_QUEUES", []);
+            }
+
+            renderBoard(tokens, queues);
+        }
+
+        function renderBoard(tokens, queues) {
+            const servingGrid = document.getElementById("servingGrid");
+            const waitingList = document.getElementById("waitingList");
+            const waitingCountBadge = document.getElementById("waitingCountBadge");
+
+            // 1. Process "Serving" tokens
+            const servingTokens = tokens.filter(t => t.status === 'SERVING');
+            
+            if (servingTokens.length === 0) {
+                servingGrid.innerHTML = `
+                    <div class="empty-serving-state">
+                        <div class="empty-serving-icon"><i data-lucide="bell-off"></i></div>
+                        <h3>No Active Counters</h3>
+                        <p>Counter desks are currently closed. Take a ticket at the kiosk and wait for counter startup.</p>
+                    </div>
+                `;
+            } else {
+                servingGrid.innerHTML = "";
+                servingTokens.forEach(t => {
+                    const queueName = t.queue ? t.queue.queueName : "Service Desk";
+                    const staffName = t.user ? t.user.name : "Agent Desk";
+                    const isNewCall = !announcedTokens.has(t.tokenId);
+
+                    servingGrid.innerHTML += `
+                        <div class="serving-card ${isNewCall ? 'new-call' : ''}" id="card-token-${t.tokenId}">
+                            <div class="serving-queue-name">${queueName}</div>
+                            <div class="serving-number-box">
+                                <span class="serving-token-number">${formatTokenNumber(t.tokenNumber)}</span>
+                            </div>
+                            <div class="serving-footer">
+                                <div class="serving-counter">
+                                    <i data-lucide="concierge-bell" style="width: 16px; height: 16px; color: var(--primary);"></i>
+                                    <span>Desk Station</span>
+                                </div>
+                                <div class="serving-agent">
+                                    <i data-lucide="user" style="width: 16px; height: 16px; color: var(--accent-green);"></i>
+                                    <span>${staffName}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+
+                    // Handle sound and TTS announcements for newly called tokens
+                    if (isNewCall) {
+                        announcedTokens.add(t.tokenId);
+                        playChime();
+                        setTimeout(() => {
+                            speakCall(t.tokenNumber, queueName);
+                        }, 800); // Small pause after chime
+
+                        // Remove flashing class after 10 seconds
+                        setTimeout(() => {
+                            const card = document.getElementById(`card-token-${t.tokenId}`);
+                            if (card) card.classList.remove('new-call');
+                        }, 10000);
+                    }
+                });
+            }
+
+            // 2. Process "Waiting" list
+            const waitingTokens = tokens
+                .filter(t => t.status === 'WAITING')
+                .sort((a, b) => a.tokenNumber - b.tokenNumber);
+
+            waitingCountBadge.innerText = `${waitingTokens.length} Waiting`;
+
+            if (waitingTokens.length === 0) {
+                waitingList.innerHTML = `
+                    <div class="empty-waiting-state">
+                        <i data-lucide="smile" style="font-size: 2.5rem; color: var(--text-muted); margin-bottom: 15px;"></i>
+                        <p>No waiting tickets. Everything is clear!</p>
+                    </div>
+                `;
+            } else {
+                waitingList.innerHTML = "";
+                waitingTokens.forEach(t => {
+                    const queueName = t.queue ? t.queue.queueName : "General Queue";
+                    waitingList.innerHTML += `
+                        <div class="waiting-row animate-fade-in">
+                            <div class="waiting-left">
+                                <div class="waiting-badge">${formatTokenNumber(t.tokenNumber)}</div>
+                                <div class="waiting-queue-info">
+                                    <div class="waiting-queue-title">${queueName}</div>
+                                    <div class="waiting-customer-name">Holder: ${t.customerName}</div>
+                                </div>
+                            </div>
+                            <span class="waiting-status">Waiting</span>
+                        </div>
+                    `;
+                });
+            }
+
+            // Maintain last states
+            // If a token's status transitions from SERVING back to something else, remove it from announced list
+            const currentServingIds = new Set(servingTokens.map(t => t.tokenId));
+            announcedTokens.forEach(id => {
+                if (!currentServingIds.has(id)) {
+                    // Check if it's no longer in the token list (i.e. completed or deleted)
+                    const stillExists = tokens.some(t => t.tokenId === id);
+                    if (!stillExists) {
+                        announcedTokens.delete(id);
+                    } else {
+                        const tk = tokens.find(t => t.tokenId === id);
+                        if (tk && tk.status !== 'SERVING') {
+                            announcedTokens.delete(id);
+                        }
+                    }
+                }
+            });
+
+            // Refresh icons in dynamically updated elements
+            lucide.createIcons();
+        }
+
+        // Start background polling
+        function startPolling() {
+            // Run initial load
+            fetchQueueData();
+            // Poll every 3 seconds for extremely fast and responsive lobby updates
+            setInterval(fetchQueueData, 3000);
+        }
+    </script>
+</body>
+</html>

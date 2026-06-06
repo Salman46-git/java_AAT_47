@@ -1,9 +1,13 @@
 package com.smartqueue.smartqueue.entity;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "queues")
+@Table(name = "queue")
 public class Queue {
 
     @Id

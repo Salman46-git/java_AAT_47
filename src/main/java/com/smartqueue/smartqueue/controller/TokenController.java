@@ -1,14 +1,25 @@
 package com.smartqueue.smartqueue.controller;
 
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.smartqueue.smartqueue.entity.Token;
 import com.smartqueue.smartqueue.service.TokenService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/tokens")
+@CrossOrigin(origins = "*")
 public class TokenController {
 
     @Autowired
@@ -53,5 +64,9 @@ public class TokenController {
     @GetMapping("/status/{status}")
     public List<Token> getTokensByStatus(@PathVariable String status) {
         return tokenService.getTokensByStatus(status);
+    }
+    @GetMapping("/user/{userId}")
+    public List<Token> getTokensByUser(@PathVariable Integer userId) {
+        return tokenService.getTokensByUser(userId);
     }
 }

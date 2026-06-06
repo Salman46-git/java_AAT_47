@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartQueue - Premium Queue Management System</title>
+    <meta name="description" content="Streamline customer service flow, manage live queues, and generate instant tickets with SmartQueue.">
+    <!-- Google Fonts: Outfit & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/lucide/dist/umd/lucide.min.js"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="style.css?v=2">
+</head>
+<body>
+    <!-- Login Screen -->
+    <div class="login-container" id="login-screen">
+        <!-- 1. Selection Screen (HackerRank style) -->
+        <div class="selection-grid" id="selection-screen">
+            <!-- Customer Option Card -->
+            <div class="option-card glass-card">
+                <div class="option-icon blue-gradient">
+                    <i data-lucide="user"></i>
+                </div>
+                <h3>For Customers</h3>
+                <p>Issue queue tickets, view estimated wait times, and track live queues in real-time.</p>
+                <div class="option-actions">
+                    <button class="btn btn-primary" onclick="showAuthForm('customer', 'signin')">Sign In</button>
+                    <button class="btn btn-secondary" onclick="showAuthForm('customer', 'register')">Register</button>
+                </div>
+            </div>
+
+            <!-- Staff/Admin Option Card -->
+            <div class="option-card glass-card">
+                <div class="option-icon purple-gradient">
+                    <i data-lucide="shield-check"></i>
+                </div>
+                <h3>For Staff & Admin</h3>
+                <p>Manage calling counters, register service desks, and configure queue categories.</p>
+                <div class="option-actions">
+                    <button class="btn btn-primary" onclick="showAuthForm('staff', 'signin')">Sign In</button>
+                    <button class="btn btn-secondary" onclick="showAuthForm('staff', 'register')">Register</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Auth Form Screen (Dynamic Login / Register) -->
+        <div class="auth-form-card glass-card hidden" id="auth-form-screen">
+            <button class="back-btn" onclick="showSelectionScreen()">
+                <i data-lucide="arrow-left"></i>
+                <span>Back</span>
+            </button>
+
+            <div class="brand" style="margin-top: 15px; margin-bottom: 20px; justify-content: center; width: 100%;">
+                <div class="logo-icon">
+                    <i data-lucide="layers"></i>
+                </div>
+                <span class="brand-name">SmartQueue</span>
+            </div>
+
+            <h2 id="auth-title" style="text-align: center; margin-bottom: 8px;">Sign In</h2>
+            <p class="card-desc" id="auth-subtitle" style="text-align: center; margin-bottom: 25px;">Enter your credentials below.</p>
+
+            <!-- Dynamic Form -->
+            <form id="authForm" class="form-group" onsubmit="handleAuthSubmit(event)">
+                <div class="input-wrapper hidden" id="field-name">
+                    <label for="authName">Full Name</label>
+                    <input type="text" id="authName" placeholder="e.g. John Doe">
+                </div>
+
+                <div class="input-wrapper">
+                    <label for="authEmail">Email Address</label>
+                    <input type="email" id="authEmail" placeholder="e.g. user@example.com" required>
+                </div>
+
+                <div class="input-wrapper hidden" id="field-phone">
+                    <label for="authPhone">Phone Number</label>
+                    <input type="tel" id="authPhone" placeholder="e.g. +1 555-0199">
+                </div>
+
+                <div class="input-wrapper">
+                    <label for="authPassword">Password</label>
+                    <input type="password" id="authPassword" placeholder="••••••••" required>
+                </div>
+
+                <!-- Role Selection (Only Staff/Agent registration allowed, Admin role is pre-seeded) -->
+                <input type="hidden" id="authRoleSelect" value="Staff">
+
+                <button type="submit" class="btn btn-primary btn-block" id="authSubmitBtn">
+                    <span id="authSubmitText">Sign In</span>
+                    <i data-lucide="log-in" id="authSubmitIcon"></i>
+                </button>
+            </form>
+
+            <!-- Autofill helper inside form screen -->
+            <div class="login-helper" id="login-helper-area">
+                <div id="autofill-badges" style="display: flex; flex-direction: column; gap: 8px;">
+                    <!-- Badges will be generated dynamically based on active selection -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="app-container hidden" id="main-app">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="logo-icon">
+                    <i data-lucide="layers"></i>
+                </div>
+                <span class="brand-name">SmartQueue</span>
+            </div>
+            
+            <nav class="nav-menu">
+                <button class="nav-item active" id="tab-customer" onclick="switchTab('customer')">
+                    <i data-lucide="user"></i>
+                    <span>Customer Corner</span>
+                </button>
+                <button class="nav-item" id="tab-staff" onclick="switchTab('staff')">
+                    <i data-lucide="concierge-bell"></i>
+                    <span>Service Desk</span>
+                </button>
+                <button class="nav-item" id="tab-admin" onclick="switchTab('admin')">
+                    <i data-lucide="shield-check"></i>
+                    <span>Admin Console</span>
+                </button>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="auto-refresh-control">
+                    <div class="toggle-switch">
+                        <input type="checkbox" id="autoRefreshToggle" checked>
+                        <label for="autoRefreshToggle"></label>
+                    </div>
+                    <span class="refresh-label">Live Sync (5s)</span>
+                </div>
+                <div class="connection-status connected" id="connectionStatus">
+                    <span class="status-dot"></span>
+                    <span class="status-text">Connected to Server</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Workspace -->
+        <main class="main-content">
+            <!-- Top Dashboard Header -->
+            <header class="top-header">
+                <div class="header-title-area">
+                    <h1 id="view-title">Customer Corner</h1>
+                    <p id="view-subtitle" class="text-muted">Generate tickets, track waiting times, and join active services.</p>
+                </div>
+                <div class="header-actions">
+                    <button class="action-btn icon-only-btn" id="audioToggleBtn" title="Toggle audio alerts">
+                        <i data-lucide="volume-2" id="volumeIcon"></i>
+                    </button>
+                    <a href="display.html" target="_blank" class="btn btn-secondary" id="lobbyDisplayBtn" title="Open Lobby TV Display" style="display: inline-flex; align-items: center; gap: 8px; text-decoration: none; padding: 8px 16px; border-radius: 8px; font-weight: 500;">
+                        <i data-lucide="tv"></i>
+                        <span>Lobby Display</span>
+                    </a>
+                    <div class="user-profile-badge">
+                        <span class="avatar" id="headerAvatar">SQ</span>
+                        <div class="profile-info">
+                            <span class="profile-name" id="headerProfileName">Guest Mode</span>
+                            <span class="profile-role" id="currentRoleLabel">Customer</span>
+                        </div>
+                        <button class="logout-btn" id="logoutBtn" onclick="handleLogoutClick()" title="Sign Out">
+                            <i data-lucide="log-out"></i>
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dashboard Views -->
+            <div class="view-viewport">
+                
+                <!-- ================= CUSTOMER VIEW ================= -->
+                <section id="view-customer" class="dashboard-view active">
+                    <div class="customer-actions-header" style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
+                        <button class="btn btn-secondary" onclick="openMyTokensModal()">
+                            <i data-lucide="ticket"></i>
+                            <span>View My Tokens</span>
+                        </button>
+                    </div>
+                    <div class="grid-2col customer-view-wrapper" id="customer-view-container">
+                        <!-- Queue Join Panel -->
+                        <div class="card glass-card" id="join-queue-card">
+                            <div class="card-header">
+                                <div class="card-icon blue-gradient"><i data-lucide="ticket-plus"></i></div>
+                                <h2>Get Your Ticket</h2>
+                            </div>
+                            <p class="card-desc">Choose a service category, enter your name, and issue your queue ticket instantly.</p>
+                            
+                            <form id="joinQueueForm" class="form-group" onsubmit="handleJoinQueue(event)">
+                                <div class="input-wrapper">
+                                    <label for="joinQueueSelect">Select Service / Queue</label>
+                                    <select id="joinQueueSelect" required>
+                                        <option value="" disabled selected>Loading available services...</option>
+                                    </select>
+                                </div>
+                                <div class="input-wrapper">
+                                    <label for="customerNameInput">Your Full Name</label>
+                                    <input type="text" id="customerNameInput" placeholder="Enter your name" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary btn-block" id="joinQueueBtn">
+                                    <span>Issue Token Ticket</span>
+                                    <i data-lucide="arrow-right"></i>
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Ticket Viewer / Tracker -->
+                        <div class="card glass-card relative-pos overflow-hidden" id="active-ticket-card">
+                            <div class="card-header">
+                                <div class="card-icon green-gradient"><i data-lucide="check-circle-2"></i></div>
+                                <h2>Your Active Ticket</h2>
+                            </div>
+                            
+                            <!-- No Ticket State -->
+                            <div id="no-ticket-state" class="empty-state">
+                                <i data-lucide="ticket" class="empty-icon"></i>
+                                <h3>No Ticket Issued</h3>
+                                <p>Select a queue and submit the form on the left to generate your ticket number.</p>
+                            </div>
+
+                            <!-- Live Ticket Card State -->
+                            <div id="ticket-state" class="ticket-display-container hidden">
+                                <div class="ticket-card animate-pop">
+                                    <div class="ticket-header">
+                                        <span class="ticket-brand">SmartQueue Ticket</span>
+                                        <span class="ticket-badge" id="ticketStatus">Waiting</span>
+                                    </div>
+                                    <div class="ticket-body">
+                                        <span class="ticket-queue-title" id="ticketQueueName">General Inquiry</span>
+                                        <h3 class="ticket-number-display" id="ticketNumber">00</h3>
+                                        <p class="ticket-holder">Customer: <strong id="ticketHolderName">-</strong></p>
+                                    </div>
+                                    <div class="ticket-rip"></div>
+                                    <div class="ticket-footer">
+                                        <div class="ticket-meta">
+                                            <span class="meta-label">Estimated Wait</span>
+                                            <span class="meta-value" id="ticketWaitTime">Calculating...</span>
+                                        </div>
+                                        <div class="ticket-meta border-left">
+                                            <span class="meta-label">People Ahead</span>
+                                            <span class="meta-value" id="ticketWaitCount">0</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="ticket-actions animate-fade-in" style="flex-wrap: wrap;">
+                                    <button type="button" class="btn btn-secondary" onclick="printTicket()">
+                                        <i data-lucide="printer"></i>
+                                        <span>Print</span>
+                                    </button>
+                                    <button type="button" class="btn btn-danger" id="cancelTicketBtn" onclick="handleCancelTicket()">
+                                        <i data-lucide="trash-2"></i>
+                                        <span>Cancel</span>
+                                    </button>
+                                    <button type="button" class="btn btn-primary btn-block" onclick="createNewTicketFlow()" style="margin-top: 10px;">
+                                        <i data-lucide="ticket-plus"></i>
+                                        <span>Generate New Token</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ================= STAFF VIEW ================= -->
+                <section id="view-staff" class="dashboard-view">
+                    <div class="grid-3col">
+                        <!-- Setup and Selection Panel -->
+                        <div class="card glass-card col-span-1">
+                            <div class="card-header">
+                                <div class="card-icon blue-gradient"><i data-lucide="sliders"></i></div>
+                                <h2>Counter Setup</h2>
+                            </div>
+                            <p class="card-desc">Assign your desk to a specific queue and select your staff profile.</p>
+                            
+                            <div class="form-group">
+                                <div class="input-wrapper">
+                                    <label for="staffQueueSelect">Assigned Queue / Service</label>
+                                    <select id="staffQueueSelect" onchange="handleStaffQueueChange()">
+                                        <option value="" disabled selected>Select a queue to serve</option>
+                                    </select>
+                                </div>
+                                <div class="input-wrapper">
+                                    <label>Staff Agent Profile</label>
+                                    <div id="staffUserSelectName" style="font-weight: 500; font-size: 0.95rem; padding: 10px 14px; background: rgba(255,255,255,0.06); border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); color: var(--text-primary); margin-top: 5px;">Guest</div>
+                                    <select id="staffUserSelect" class="hidden">
+                                        <option value="" disabled selected>Select staff member</option>
+                                    </select>
+                                </div>
+                                <div class="metrics-mini-list mt-3">
+                                    <div class="metric-mini-item">
+                                        <span class="mini-label">Total Waiting in Queue:</span>
+                                        <span class="mini-val text-primary" id="staffQueueWaitingCount">0</span>
+                                    </div>
+                                    <div class="metric-mini-item">
+                                        <span class="mini-label">Current Queue Token:</span>
+                                        <span class="mini-val text-accent" id="staffQueueCurrentTokenVal">0</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Main Counter Calling Console -->
+                        <div class="card glass-card col-span-2">
+                            <div class="card-header">
+                                <div class="card-icon orange-gradient"><i data-lucide="tv"></i></div>
+                                <h2>Desk Controller</h2>
+                            </div>
+                            <p class="card-desc">Control customer calling, progress service states, and complete appointments.</p>
+
+                            <div class="calling-dashboard-grid">
+                                <!-- Big Active Display -->
+                                <div class="active-token-monitor">
+                                    <span class="monitor-label">Now Serving</span>
+                                    <h1 class="monitor-token-number" id="servingTokenNumber">--</h1>
+                                    <div class="monitor-customer-details">
+                                        <i data-lucide="user-check"></i>
+                                        <span id="servingCustomerName">No Active Customer</span>
+                                    </div>
+                                </div>
+
+                                <!-- Action Buttons -->
+                                <div class="calling-dashboard-actions">
+                                    <button class="btn btn-accent btn-large" id="callNextBtn" onclick="handleCallNextToken()">
+                                        <i data-lucide="play-circle"></i>
+                                        <span>Call Next Customer</span>
+                                    </button>
+                                    <button class="btn btn-success btn-large" id="completeTokenBtn" onclick="handleCompleteServingToken()" disabled>
+                                        <i data-lucide="check-circle-2"></i>
+                                        <span>Mark Completed</span>
+                                    </button>
+                                    <button class="btn btn-secondary btn-block" id="recallBtn" onclick="handleRecallToken()" disabled>
+                                        <i data-lucide="megaphone"></i>
+                                        <span>Recall Announcement</span>
+                                    </button>
+                                    <button class="btn btn-danger btn-block" id="skipTokenBtn" onclick="handleSkipServingToken()" disabled>
+                                        <i data-lucide="skip-forward"></i>
+                                        <span>Skip Customer</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Live Wait List -->
+                        <div class="card glass-card col-span-3">
+                            <div class="card-header flex-header">
+                                <div>
+                                    <h2>Queue Backlog</h2>
+                                    <p class="card-desc">Real-time status of all generated tickets in the selected queue.</p>
+                                </div>
+                                <span class="badge badge-primary" id="backlogCountBadge">0 Waiting</span>
+                            </div>
+                            <div class="table-container">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Token #</th>
+                                            <th>Customer Name</th>
+                                            <th>Status</th>
+                                            <th>Assigned Desk Staff</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="waitingTokensTableBody">
+                                        <tr>
+                                            <td colspan="5" class="text-center text-muted">Please select a queue above to view the backlog.</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ================= ADMIN VIEW ================= -->
+                <section id="view-admin" class="dashboard-view">
+                    <!-- Quick Stats Row -->
+                    <div class="stats-row">
+                        <!-- 1. Total Queues -->
+                        <div class="stat-card">
+                            <div class="stat-icon purple-gradient"><i data-lucide="network"></i></div>
+                            <div class="stat-data">
+                                <span class="stat-label">Total Queues</span>
+                                <h3 class="stat-value" id="statTotalQueues">0</h3>
+                            </div>
+                        </div>
+                        <!-- 2. Waiting -->
+                        <div class="stat-card">
+                            <div class="stat-icon orange-gradient"><i data-lucide="clock"></i></div>
+                            <div class="stat-data">
+                                <span class="stat-label">Waiting</span>
+                                <h3 class="stat-value" id="statWaitingTokens">0</h3>
+                            </div>
+                        </div>
+                        <!-- 3. Skipped -->
+                        <div class="stat-card">
+                            <div class="stat-icon orange-gradient"><i data-lucide="user-x"></i></div>
+                            <div class="stat-data">
+                                <span class="stat-label">Skipped</span>
+                                <h3 class="stat-value" id="statSkippedTokens">0</h3>
+                            </div>
+                        </div>
+                        <!-- 4. Serving -->
+                        <div class="stat-card">
+                            <div class="stat-icon green-gradient"><i data-lucide="refresh-cw"></i></div>
+                            <div class="stat-data">
+                                <span class="stat-label">Serving</span>
+                                <h3 class="stat-value" id="statServingTokens">0</h3>
+                            </div>
+                        </div>
+                        <!-- 5. Completed -->
+                        <div class="stat-card">
+                            <div class="stat-icon grey-gradient"><i data-lucide="check-square"></i></div>
+                            <div class="stat-data">
+                                <span class="stat-label">Completed</span>
+                                <h3 class="stat-value" id="statCompletedTokens">0</h3>
+                            </div>
+                        </div>
+                        <!-- 6. Total Tickets -->
+                        <div class="stat-card">
+                            <div class="stat-icon blue-gradient"><i data-lucide="tags"></i></div>
+                            <div class="stat-data">
+                                <span class="stat-label">Total Tickets</span>
+                                <h3 class="stat-value" id="statTotalTokens">0</h3>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid-2col mt-4">
+                        <!-- Add Queue form -->
+                        <div class="card glass-card">
+                            <div class="card-header">
+                                <div class="card-icon purple-gradient"><i data-lucide="folder-plus"></i></div>
+                                <h2>Create Service Queue</h2>
+                            </div>
+                            <p class="card-desc">Add a new service category (e.g. Technical Support, Cashier, Reception).</p>
+                            
+                            <form id="createQueueForm" class="form-group" onsubmit="handleCreateQueue(event)">
+                                <div class="input-wrapper">
+                                    <label for="newQueueNameInput">Queue / Service Category Name</label>
+                                    <input type="text" id="newQueueNameInput" placeholder="e.g. General Inquiry" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary" id="createQueueBtn">
+                                    <i data-lucide="plus"></i>
+                                    <span>Create Queue</span>
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Add User form -->
+                        <div class="card glass-card">
+                            <div class="card-header">
+                                <div class="card-icon blue-gradient"><i data-lucide="user-plus"></i></div>
+                                <h2>Register Service Agent (User)</h2>
+                            </div>
+                            <p class="card-desc">Add system accounts for counter staff, managers, or customer service representatives.</p>
+                            
+                            <form id="createUserForm" class="form-group" onsubmit="handleCreateUser(event)">
+                                <div class="grid-2col" style="gap: 15px; margin-bottom: 0;">
+                                    <div class="input-wrapper">
+                                        <label for="newUserNameInput">Full Name</label>
+                                        <input type="text" id="newUserNameInput" placeholder="Jane Doe" required>
+                                    </div>
+                                    <div class="input-wrapper">
+                                        <label for="newUserEmailInput">Email Address</label>
+                                        <input type="email" id="newUserEmailInput" placeholder="jane@example.com" required>
+                                    </div>
+                                </div>
+                                <div class="grid-3col" style="gap: 15px; margin-bottom: 0;">
+                                    <div class="input-wrapper col-span-1">
+                                        <label for="newUserPhoneInput">Phone Number</label>
+                                        <input type="tel" id="newUserPhoneInput" placeholder="+123456789" required>
+                                    </div>
+                                    <div class="input-wrapper col-span-1">
+                                        <label for="newUserPasswordInput">Security Password</label>
+                                        <input type="password" id="newUserPasswordInput" placeholder="••••••••" required>
+                                    </div>
+                                    <div class="input-wrapper col-span-1">
+                                        <label for="newUserRoleSelect">User Role</label>
+                                        <select id="newUserRoleSelect" required>
+                                            <option value="Staff" selected>Staff / Agent</option>
+                                            <option value="Customer">Customer</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-primary" id="createUserBtn">
+                                    <i data-lucide="plus"></i>
+                                    <span>Register Agent</span>
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- List of Queues -->
+                        <div class="card glass-card col-span-2">
+                            <div class="card-header">
+                                <h2>Active Service Queues</h2>
+                                <p class="card-desc">Full register of current service categories and their counter status.</p>
+                            </div>
+                            <div class="table-container">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Queue ID</th>
+                                            <th>Queue Name</th>
+                                            <th>Currently Active Token</th>
+                                            <th>Total Registered Tickets</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="adminQueuesTableBody">
+                                        <tr>
+                                            <td colspan="4" class="text-center text-muted">No queues registered yet. Create one above!</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- List of Users -->
+                        <div class="card glass-card col-span-2">
+                            <div class="card-header flex-header" style="flex-wrap: wrap; gap: 15px;">
+                                <div>
+                                    <h2>Registered Users / Staff</h2>
+                                    <p class="card-desc" style="margin-bottom: 0;">System accounts authorized to manage queues and handle services.</p>
+                                </div>
+                                <div class="btn-group" style="display: flex; gap: 10px; background: rgba(255,255,255,0.05); padding: 4px; border-radius: 8px; border: 1px solid var(--border-color);">
+                                    <button type="button" class="btn btn-secondary active-filter" id="userFilterStaff" onclick="filterRegisteredUsers('staff')" style="padding: 6px 12px; font-size: 13px; border-radius: 6px;">Staff & Admins</button>
+                                    <button type="button" class="btn btn-secondary" id="userFilterCustomer" onclick="filterRegisteredUsers('customer')" style="padding: 6px 12px; font-size: 13px; border-radius: 6px;">Customers</button>
+                                </div>
+                            </div>
+                            <div class="table-container">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>User ID</th>
+                                            <th>Full Name</th>
+                                            <th>Email</th>
+                                            <th>Phone Number</th>
+                                            <th>System Role</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="adminUsersTableBody">
+                                        <tr>
+                                            <td colspan="5" class="text-center text-muted">No users registered yet. Add one above!</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                    </div>
+
+                    <!-- Queue Analytics Chart -->
+                    <div class="card glass-card col-span-2">
+                        <div class="card-header flex-header">
+                            <div>
+                                <h2>Queue Analytics Dashboard</h2>
+                                <p class="card-desc">Average waiting time and serving duration metrics (in minutes) per service queue category.</p>
+                            </div>
+                            <button type="button" class="action-btn icon-only-btn" onclick="updateAnalyticsCharts()" title="Refresh Charts">
+                                <i data-lucide="refresh-cw"></i>
+                            </button>
+                        </div>
+                        <div class="chart-container" style="position: relative; height: 320px; width: 100%; margin-top: 10px;">
+                            <canvas id="analyticsChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Notifications Log -->
+                    <div class="card glass-card col-span-2">
+                        <div class="card-header flex-header" style="flex-wrap: wrap; gap: 15px;">
+                            <div>
+                                <h2>Notifications Log</h2>
+                                <p class="card-desc" style="margin-bottom: 0;">Real-time log of customer alerts, proximity calls, and queue updates.</p>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 15px;">
+                                <div class="filter-wrapper" style="display: flex; align-items: center; gap: 8px;">
+                                    <label for="notificationCategoryFilter" style="margin: 0; font-size: 11px; white-space: nowrap;">Filter Facility:</label>
+                                    <select id="notificationCategoryFilter" onchange="filterNotifications()" style="padding: 6px 12px; font-size: 13px; background: rgba(0,0,0,0.4); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-main);">
+                                        <option value="All">All Facilities</option>
+                                    </select>
+                                </div>
+                                <button type="button" class="action-btn icon-only-btn" onclick="loadNotifications()" title="Force Refresh Notifications">
+                                    <i data-lucide="refresh-cw"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Sent Time</th>
+                                        <th>Recipient User</th>
+                                        <th>Notification Message</th>
+                                        <th>Facility</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="notificationTableBody">
+                                    <tr>
+                                        <td colspan="4" class="text-center text-muted">No notifications sent yet.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Service History Log -->
+                    <div class="card glass-card col-span-2">
+                        <div class="card-header flex-header">
+                            <div>
+                                <h2>Completed Service Records</h2>
+                                <p class="card-desc">Archived metrics for completed customer service interactions and queues.</p>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 15px;">
+                                <div class="filter-wrapper" style="display: flex; align-items: center; gap: 8px;">
+                                    <label for="serviceHistoryDateFilter" style="margin: 0; font-size: 11px; white-space: nowrap;">Filter Date:</label>
+                                    <input type="date" id="serviceHistoryDateFilter" onchange="filterServiceHistory()" style="padding: 6px 12px; font-size: 13px; background: rgba(0,0,0,0.4); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-main); color-scheme: dark;">
+                                </div>
+                                <button type="button" class="action-btn icon-only-btn" onclick="loadServiceHistory()" title="Force Refresh History">
+                                    <i data-lucide="refresh-cw"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Service ID</th>
+                                        <th>Token #</th>
+                                        <th>Customer</th>
+                                        <th>Wait Time</th>
+                                        <th>Service Duration</th>
+                                        <th>Completion Time</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="serviceHistoryTableBody">
+                                    <tr>
+                                        <td colspan="6" class="text-center text-muted">No completed service records yet.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Skipped Tokens Log -->
+                    <div class="card glass-card col-span-2">
+                        <div class="card-header flex-header">
+                            <div>
+                                <h2>Skipped Tokens Log</h2>
+                                <p class="card-desc">Log of skipped (no-show) customers. You can delete or re-queue them.</p>
+                            </div>
+                            <button type="button" class="action-btn icon-only-btn" onclick="loadAdminDashboard()" title="Force Refresh Skipped Tokens">
+                                <i data-lucide="refresh-cw"></i>
+                            </button>
+                        </div>
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Token #</th>
+                                        <th>Customer</th>
+                                        <th>Queue / Facility</th>
+                                        <th>Assigned Staff</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="skippedTokensTableBody">
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted">No skipped tokens found.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- My Tokens Modal -->
+    <div id="myTokensModal" class="modal-overlay hidden" onclick="handleModalOverlayClick(event)">
+        <div class="modal-card glass-card animate-pop">
+            <div class="modal-header">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div class="card-icon blue-gradient"><i data-lucide="ticket"></i></div>
+                    <div>
+                        <h2 style="margin: 0; font-size: 20px; font-family: 'Outfit', sans-serif;">My Generated Tokens</h2>
+                        <p class="text-muted" style="font-size: 13px; margin: 0;">History of all tickets issued under your account</p>
+                    </div>
+                </div>
+                <button class="modal-close-btn" onclick="closeMyTokensModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            
+            <div class="modal-body">
+                <div class="table-container" style="max-height: 400px; overflow-y: auto;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Token #</th>
+                                <th>Service / Queue</th>
+                                <th>Name</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="myTokensTableBody">
+                            <tr>
+                                <td colspan="5" class="text-center text-muted">No tokens found.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="toast-container">
+        <span id="toastMessage">Notification Message</span>
+    </div>
+
+    <!-- Audio Chime elements (fallback, though we mostly synthesize) -->
+    <audio id="chimeAudio" src="https://assets.mixkit.co/active_storage/sfx/2568/2568-84.wav" preload="auto"></audio>
+
+    <script src="app.js?v=2"></script>
+</body>
+</html>

@@ -10,24 +10,26 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.smartqueue.smartqueue.entity.User;
-import com.smartqueue.smartqueue.service.UserService;
+import com.smartqueue.smartqueue.entity.Notification;
+import com.smartqueue.smartqueue.service.NotificationService;
 
 @RestController
-@RequestMapping("/users")
+@RequestMapping("/notifications")
 @CrossOrigin(origins = "*")
-public class UserController {
+public class NotificationController {
 
     @Autowired
-    private UserService userService;
-
-    @GetMapping
-    public List<User> getUsers() {
-        return userService.getAllUsers();
-    }
+    private NotificationService notificationService;
 
     @PostMapping
-    public User addUser(@RequestBody User user) {
-        return userService.saveUser(user);
+    public Notification createNotification(
+            @RequestBody Notification notification){
+
+        return notificationService.saveNotification(notification);
+    }
+
+    @GetMapping
+    public List<Notification> getNotifications(){
+        return notificationService.getAllNotifications();
     }
 }
