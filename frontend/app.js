@@ -1831,7 +1831,7 @@ function startAutoRefresh() {
         const viewId = activeView.id;
         updateActiveViewData(viewId.replace("view-", ""));
 
-    }, 5000); // Sync every 5 seconds
+    }, 10000); // Sync every 10 seconds to optimize connection limits
 }
 
 function updateActiveViewData(tabName) {

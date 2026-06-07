@@ -821,8 +821,8 @@
         function startPolling() {
             // Run initial load
             fetchQueueData();
-            // Poll every 3 seconds for extremely fast and responsive lobby updates
-            setInterval(fetchQueueData, 3000);
+            // Poll every 10 seconds to optimize database connection usage
+            setInterval(fetchQueueData, 10000);
         }
     </script>
 </body>
