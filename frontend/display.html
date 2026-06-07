@@ -581,7 +581,9 @@
 
     <!-- Business Logic -->
     <script>
-        const API_BASE = window.location.origin === 'http://localhost:8080' ? '' : 'http://localhost:8080';
+        const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+            ? 'http://localhost:8080'
+            : 'https://smart-queue-backend.onrender.com'; // <-- Replace with your actual Render backend URL once created
         let useSimulationMode = false;
         let announcedTokens = new Set();
         let isAudioActivated = false;
