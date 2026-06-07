@@ -5,7 +5,7 @@
 // Determine API Base URL. Auto-connects to local backend when on localhost, and your Render backend in production.
 const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
     ? 'http://localhost:8080'
-    : 'https://smart-queue-backend.onrender.com'; // <-- Replace with your actual Render backend URL once created
+    : 'https://java-aat-47-3.onrender.com';
 
 // ==========================================================================
 // LOCAL DEMO & OFFLINE SIMULATION LAYER
